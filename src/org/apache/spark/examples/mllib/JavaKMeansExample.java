@@ -12,7 +12,7 @@ import org.apache.spark.mllib.clustering.KMeans;
 import org.apache.spark.mllib.clustering.KMeansModel;
 import org.apache.spark.mllib.linalg.Vector;
 import org.apache.spark.mllib.linalg.Vectors;
-// $example off$
+// $example off$nnnnn
 
 public class JavaKMeansExample {
   public static void main(String[] args) {
