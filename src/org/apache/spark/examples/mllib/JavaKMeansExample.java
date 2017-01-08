@@ -23,25 +23,12 @@ public class JavaKMeansExample {
 
     // $example on$
     // Load and parse data
-    String path = "D:\\ML\\network_intrusion_detection_without_label.csv";
+    String path = ".\\resource\network_intrusion_detection_without_label.csv";
+    JavaRDD<Vector> parsedData =org.sujeet.ml.Util.loadData(jsc, path);
+
     
-    //"D:\ML\network_intrusion_detection_without_label.csv"
-    
-    
-    JavaRDD<String> data = jsc.textFile(path);
-    JavaRDD<Vector> parsedData = data.map(
-      new Function<String, Vector>() {
-        public Vector call(String s) {
-          String[] sarray = s.split(",");
-          double[] values = new double[sarray.length];
-          for (int i = 0; i < sarray.length; i++) {
-            values[i] = Double.parseDouble(sarray[i]);
-          }
-          return Vectors.dense(values);
-        }
-      }
-    );
     parsedData.cache();
+    parsedData.saveAsTextFile(".\\resource\\parseddata.txt");
     System.out.println("Data row:"+parsedData.count());
 
     // Cluster the data into two classes using KMeans
