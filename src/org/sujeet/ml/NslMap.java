@@ -32,7 +32,9 @@ public class NslMap {
 		
 		for(int i=0;i<=22;i++){
 			class_type[i]=new ModelMap();
-			class_type[i].setIntVal(i);
+			if(i==0) 	class_type[i].setIntVal(i);
+			else		class_type[i].setIntVal(0);
+				
 		}
 		
 		protocol_type[0].setStrVal("tcp");

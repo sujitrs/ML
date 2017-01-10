@@ -11,8 +11,9 @@ public class BuildModel {
 	
 	public static void main(String[] args) {
 		
-		//@ TODO 1) Import data 
-		 	
+		//@ TODO 1) Import data
+		//@ TODO 2) Edit Metadata
+		//@ TODO 3) Convert Indicator Values		 	
 			SparkConf conf = new SparkConf().setMaster("local").setAppName("JavaKMeansExample");
 		    JavaSparkContext jsc = new JavaSparkContext(conf);
 
@@ -21,15 +22,13 @@ public class BuildModel {
 		    String path = ".\\resource\\network_intrusion_detection_with_target.csv";
 		    JavaRDD<Vector> parsedData =org.sujeet.ml.Util.loadData(jsc, path);
 
-		    
 		    parsedData.cache();
 		    System.out.println("Data row:"+parsedData.count());
 		    parsedData.saveAsTextFile(".\\resource\\parseddata"+new Date().getTime()+".txt");
-		    System.out.println("Data row:"+parsedData.count());
+		    
 
-		//@ TODO 2) Edit Metadata 
-		//@ TODO 3) Convert Indicator Values 
-		//@ TODO 4) Select Columns in dataset 
+
+		//@ TODO 4) Select Columns in dataset based on  
 		//@ TODO 5) Feature selection 
 		//@ TODO 6) Partition and sample 
 		//@ TODO 7) Use ‘Two-Class Logistic Regression” and “Boosted Decision Tree” on separate partitions 
