@@ -6,6 +6,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.mllib.linalg.Vector;
+import org.apache.spark.mllib.regression.LabeledPoint;
 
 public class BuildModel {
 	
@@ -20,16 +21,19 @@ public class BuildModel {
 		    
 		    // Load and parse data
 		    String path = ".\\resource\\network_intrusion_detection_with_target.csv";
-		    JavaRDD<Vector> parsedData =org.sujeet.ml.Util.loadData(jsc, path);
+		    //JavaRDD<Vector> parsedData =org.sujeet.ml.Util.loadData(jsc, path);
+		    JavaRDD<LabeledPoint> parsedData =org.sujeet.ml.Util.loadLabeledData(jsc, path);
 
 		    parsedData.cache();
 		    System.out.println("Data row:"+parsedData.count());
 		    parsedData.saveAsTextFile(".\\resource\\parseddata"+new Date().getTime()+".txt");
+		    //@ TODO 4) Select Columns in dataset based on  
+			//@ TODO 5) Feature selection 
+			    
+		    org.sujeet.ml.Util.feaureSelection(parsedData);
 		    
 
-
-		//@ TODO 4) Select Columns in dataset based on  
-		//@ TODO 5) Feature selection 
+// What is Dataset<Row> data = spark.read().format("libsvm").load("data/mllib/sample_libsvm_data.txt");
 		//@ TODO 6) Partition and sample 
 		//@ TODO 7) Use ‘Two-Class Logistic Regression” and “Boosted Decision Tree” on separate partitions 
 		//@ TODO 8) Tune parameters using metric for measuring performance for classification/regression 

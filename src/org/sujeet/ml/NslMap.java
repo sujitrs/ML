@@ -32,8 +32,8 @@ public class NslMap {
 		
 		for(int i=0;i<=22;i++){
 			class_type[i]=new ModelMap();
-			if(i==0) 	class_type[i].setIntVal(i);
-			else		class_type[i].setIntVal(0);
+			if(i==0) 	class_type[i].setIntVal(0);
+			else		class_type[i].setIntVal(1);
 				
 		}
 		
