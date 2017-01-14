@@ -118,7 +118,7 @@ public class Util {
 }
 	
 	
-	public static void feaureSelection(JavaRDD<LabeledPoint> points ){
+	public static JavaRDD<LabeledPoint> feaureSelection(JavaRDD<LabeledPoint> points ){
 		// Discretize data in 16 equal bins since ChiSqSelector requires categorical features
 	    // Although features are doubles, the ChiSqSelector treats each unique value as a category
 	    JavaRDD<LabeledPoint> discretizedData = points.map(
@@ -135,7 +135,7 @@ public class Util {
 	    );
 
 	    // Create ChiSqSelector that will select top 15 of 40 features
-	    ChiSqSelector selector = new ChiSqSelector(15);
+	    ChiSqSelector selector = new ChiSqSelector(BuildModel.NO_OF_FEATURES_TO_BE_SELECTED);
 	    // Create ChiSqSelector model (selecting features)
 	    final ChiSqSelectorModel transformer = selector.fit(discretizedData.rdd());
 	    // Filter the top 15 features from each feature vector
@@ -150,6 +150,7 @@ public class Util {
 	    // $example off$
 
 	    System.out.println("filtered data: "+filteredData.count());
+	    return filteredData;
 	    /*filteredData.foreach(new VoidFunction<LabeledPoint>() {
 	      @Override
 	      public void call(LabeledPoint labeledPoint) throws Exception {
