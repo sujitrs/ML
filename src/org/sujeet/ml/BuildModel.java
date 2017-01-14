@@ -22,16 +22,27 @@ public class BuildModel {
 		    // Load and parse data
 		    String path = ".\\resource\\network_intrusion_detection_with_target.csv";
 		    //JavaRDD<Vector> parsedData =org.sujeet.ml.Util.loadData(jsc, path);
-		    JavaRDD<LabeledPoint> parsedData =org.sujeet.ml.Util.loadLabeledData(jsc, path);
+		    JavaRDD<LabeledPoint> parsedDataFullData =org.sujeet.ml.Util.loadLabeledData(jsc, path);
 
-		    parsedData.cache();
-		    System.out.println("Data row:"+parsedData.count());
-		    parsedData.saveAsTextFile(".\\resource\\parseddata"+new Date().getTime()+".txt");
+		    parsedDataFullData.cache();
+		    System.out.println("Data row:"+parsedDataFullData.count());
+		    parsedDataFullData.saveAsTextFile(".\\resource\\parseddata"+new Date().getTime()+".txt");
 		    //@ TODO 4) Select Columns in dataset based on  
 			//@ TODO 5) Feature selection 
-			    
-		    org.sujeet.ml.Util.feaureSelection(parsedData);
+		    JavaRDD<LabeledPoint> parsedDataFeatureSelected=parsedDataFullData;     
+		    org.sujeet.ml.Util.feaureSelection(parsedDataFeatureSelected);
+		    //
 		    
+		 // Split initial RDD into two... [60% training data, 40% testing data].
+		    JavaRDD<LabeledPoint>[] splitsFullData = parsedDataFullData.randomSplit(new double[] {0.6, 0.4}, 11L);
+		    JavaRDD<LabeledPoint> trainingFullData = splitsFullData[0].cache();
+		    JavaRDD<LabeledPoint> testFullData = splitsFullData[1];
+
+		    
+		 // Split initial RDD into two... [60% training data, 40% testing data].
+		    JavaRDD<LabeledPoint>[] splitsFeatureSelectedData = parsedDataFeatureSelected.randomSplit(new double[] {0.6, 0.4}, 11L);
+		    JavaRDD<LabeledPoint> trainingFeatureSelectedData = splitsFeatureSelectedData[0].cache();
+		    JavaRDD<LabeledPoint> testFeatureSelectedData = splitsFeatureSelectedData[1];
 
 // What is Dataset<Row> data = spark.read().format("libsvm").load("data/mllib/sample_libsvm_data.txt");
 		//@ TODO 6) Partition and sample 
