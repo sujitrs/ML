@@ -224,6 +224,8 @@ public class BuildModel {
 		//@ TODO 9) Score Model by adding scored labels and scored possibilities 
 		//@ TODO 10) Evaluate model using either of ROC(True Positive Rate Vs False Positive Rate)/Regression Vs Recall/LIFT (Number of True Positivie Vs Positive Rate) 
 		//@ TODO 11) Compare performance and conclude which model to be used
+		//@ TODO what is difference between test error and accuracy ? are they same it needs to be comparable
+		//@ TODO Try Pearson corelation algo along with chisqrd
 		
 	}
 
