@@ -26,6 +26,7 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.spark.ml.classification.LogisticRegression;
 import org.apache.spark.mllib.regression.LabeledPoint;
 import org.apache.spark.mllib.tree.DecisionTree;
 import org.apache.spark.mllib.tree.model.DecisionTreeModel;
@@ -81,8 +82,15 @@ public class BuildModel {
 		    JavaRDD<LabeledPoint> trainingFeatureSelectedData = splitsFeatureSelectedData[0].cache();
 		    JavaRDD<LabeledPoint> testFeatureSelectedData = splitsFeatureSelectedData[1];
 		    
-		    BinaryClassificationMetrics fullDataLrMetrics = Util.logisticRegression(trainingFullData, testFullData);
-		    BinaryClassificationMetrics selectedDataLrMetrics = Util.logisticRegression(trainingFeatureSelectedData, testFeatureSelectedData);
+		    
+		    final LogisticRegressionModel fullDataLrModel = new LogisticRegressionWithLBFGS().setNumClasses(2).run(trainingFullData.rdd());
+		    final LogisticRegressionModel selectedDataLrModel = new LogisticRegressionWithLBFGS().setNumClasses(2).run(trainingFullData.rdd());
+		    
+		    BinaryClassificationMetrics fullDataLrMetrics = Util.logisticRegression(fullDataLrModel, trainingFullData, testFullData);
+		    BinaryClassificationMetrics selectedDataLrMetrics = Util.logisticRegression(selectedDataLrModel, trainingFeatureSelectedData, testFeatureSelectedData);
+		    
+		    fullDataLrModel.save(jsc.sc(), ".\\resource\\model\\LogisticRegressionFullData");
+		    selectedDataLrModel.save(jsc.sc(), ".\\resource\\model\\LogisticRegressionSelectedData");
 		    
 		    BinaryClassificationMetrics fullDataDtMetrics =Util.DecisionTree(trainingFullData, testFullData);
 		    BinaryClassificationMetrics selectedDataDtMetrics = Util.DecisionTree(trainingFeatureSelectedData, testFeatureSelectedData);
@@ -94,7 +102,7 @@ public class BuildModel {
 		    BinaryClassificationMetrics selectedDataSvmMetrics = Util.SVMwithSGD(trainingFeatureSelectedData, testFeatureSelectedData);
 		    
 		    
-		    
+		    //JavaRDD<LabeledPoint> testData=new 
 		    
 		    System.out.println("Area Under ROC");
 		    System.out.println("====================");

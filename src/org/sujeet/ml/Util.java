@@ -203,10 +203,8 @@ public class Util {
 	    });*/	
 	}
 	
-	public static BinaryClassificationMetrics logisticRegression(JavaRDD<LabeledPoint> training, JavaRDD<LabeledPoint> test){
-		 final LogisticRegressionModel modelFullData = new LogisticRegressionWithLBFGS()
-			      .setNumClasses(2)//As binary classes
-			      .run(training.rdd());
+	public static BinaryClassificationMetrics logisticRegression( LogisticRegressionModel modelFullData,JavaRDD<LabeledPoint> training, JavaRDD<LabeledPoint> test){
+		
 
 			    // Compute raw scores on the test set.
 			    JavaRDD<Tuple2<Object, Object>> predictionAndLabels= test.map(
@@ -316,7 +314,7 @@ public class Util {
 
 	    // Clear the default threshold.
 	    model.clearThreshold();
-
+	    
 	    // Compute raw scores on the test set.
 	    JavaRDD<Tuple2<Object, Object>> scoreAndLabels = test.map(
 	      new Function<LabeledPoint, Tuple2<Object, Object>>() {
