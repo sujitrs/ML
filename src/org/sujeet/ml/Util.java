@@ -1,6 +1,7 @@
 package org.sujeet.ml;
 
 import org.apache.spark.SparkConf;
+import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
@@ -65,8 +66,12 @@ import org.apache.spark.mllib.regression.LabeledPoint;
 import org.apache.spark.mllib.tree.RandomForest;
 import org.apache.spark.mllib.tree.model.RandomForestModel;
 import org.apache.spark.mllib.util.MLUtils;
+
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+
 public class Util {
-	
+	static final Logger logger = LogManager.getLogger(Util.class.getName());
 	/**
 	 * 1) Import data
 	 * */
@@ -88,7 +93,7 @@ public class Util {
 		          String[] sarray = s.split(",");
 		          double[] values = new double[sarray.length];
 		          for (int i = 0; i < sarray.length; i++) {
-		        	  System.out.print("sarray["+i+"]="+sarray[i]+",");
+		        	  logger.debug("sarray["+i+"]="+sarray[i]+",");
 		        	  
 		        	if((NslMap.hm.containsKey(i))){
 		        		val=(ModelMap[]) NslMap.hm.get(i);
@@ -100,8 +105,8 @@ public class Util {
 		        		
 		        	}  
 		            values[i] = Double.parseDouble(sarray[i]);
-		            System.out.print("Converted value="+values[i]);
-		          } System.out.println("");
+		            logger.debug("Converted value="+values[i]);
+		          } logger.debug("");
 		          return Vectors.dense(values);
 		        }
 		      }
@@ -114,7 +119,7 @@ public class Util {
 	public static JavaRDD<LabeledPoint> loadLabeledData(JavaSparkContext jsc,  String path){
 	    JavaRDD<String> data = jsc.textFile(path);
 	    NslMap.init();
-	    System.out.println(NslMap.hm);
+	    logger.debug(NslMap.hm);
 	    
 	    JavaRDD<LabeledPoint> parsedData = data.map(
 	      new Function<String, LabeledPoint>() {
@@ -193,7 +198,7 @@ public class Util {
 	    );
 	    // $example off$
 
-	    System.out.println("filtered data: "+filteredData.count());
+	    logger.debug("filtered data: "+filteredData.count());
 	    return filteredData;
 	    /*filteredData.foreach(new VoidFunction<LabeledPoint>() {
 	      @Override
@@ -203,24 +208,27 @@ public class Util {
 	    });*/	
 	}
 	
-	public static BinaryClassificationMetrics logisticRegression( LogisticRegressionModel modelFullData,JavaRDD<LabeledPoint> training, JavaRDD<LabeledPoint> test){
+	public static BinaryClassificationMetrics logisticRegression( SparkContext sc, String modelName,JavaRDD<LabeledPoint> training, JavaRDD<LabeledPoint> test){
 		
-
+		final LogisticRegressionModel model = new LogisticRegressionWithLBFGS().setNumClasses(2).run(training.rdd());
+	    
 			    // Compute raw scores on the test set.
 			    JavaRDD<Tuple2<Object, Object>> predictionAndLabels= test.map(
 			      new Function<LabeledPoint, Tuple2<Object, Object>>() {
 			        public Tuple2<Object, Object> call(LabeledPoint p) {
-			          Double prediction = modelFullData.predict(p.features());
+			          Double prediction = model.predict(p.features());
 			          return new Tuple2<Object, Object>(prediction, p.label());
 			        }
 			      }
 			    );
-
+			    
+			    model.save(sc, BuildModel.PATH_FOR_SAVING_MODEL+modelName);
 			    BinaryClassificationMetrics  metrics= new BinaryClassificationMetrics(predictionAndLabels.rdd());
+			    
 			    return metrics;
 	}
 	
-	public static BinaryClassificationMetrics DecisionTree(JavaRDD<LabeledPoint> training, JavaRDD<LabeledPoint> test){
+	public static BinaryClassificationMetrics DecisionTree(SparkContext sc, String modelName, JavaRDD<LabeledPoint> training, JavaRDD<LabeledPoint> test){
 		
 		Integer numClasses = 2;// Two CLass
 	    Map<Integer, Integer> categoricalFeaturesInfo = new HashMap<>();
@@ -256,13 +264,13 @@ public class Util {
 	          return !pl._1().equals(pl._2());
 	        }
 	      }).count() / test.count();*/
-	    
+	    model.save(sc, BuildModel.PATH_FOR_SAVING_MODEL+modelName);
 	    return new BinaryClassificationMetrics(predictionAndLabels.rdd());
 	    
 		
 	}
 	
-	public static BinaryClassificationMetrics RandomForest(JavaRDD<LabeledPoint> training, JavaRDD<LabeledPoint> test)
+	public static BinaryClassificationMetrics RandomForest(SparkContext sc, String modelName,JavaRDD<LabeledPoint> training, JavaRDD<LabeledPoint> test)
 	{
 		 Integer numClasses = 2;
 		    HashMap<Integer, Integer> categoricalFeaturesInfo = new HashMap<>();
@@ -303,10 +311,11 @@ public class Util {
 				        }
 				      }
 				    );
+		    model.save(sc, BuildModel.PATH_FOR_SAVING_MODEL+modelName);
 		    return new BinaryClassificationMetrics(predictionAndLabels.rdd());
 	}
 	
-	public static BinaryClassificationMetrics SVMwithSGD(JavaRDD<LabeledPoint> training, JavaRDD<LabeledPoint> test)
+	public static BinaryClassificationMetrics SVMwithSGD(SparkContext sc, String modelName,JavaRDD<LabeledPoint> training, JavaRDD<LabeledPoint> test)
 	{
 	    // Run training algorithm to build the model.
 	    int numIterations = 100;
@@ -326,6 +335,7 @@ public class Util {
 	    );
 
 	    // Get evaluation metrics.
+	    model.save(sc, BuildModel.PATH_FOR_SAVING_MODEL+modelName);
 	    return new BinaryClassificationMetrics(JavaRDD.toRDD(scoreAndLabels));
 	}
 	

@@ -43,9 +43,15 @@ import org.apache.spark.mllib.regression.LabeledPoint;
 import org.apache.spark.mllib.tree.RandomForest;
 import org.apache.spark.mllib.tree.model.RandomForestModel;
 import org.apache.spark.mllib.util.MLUtils;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class BuildModel {
 	public static final int NO_OF_FEATURES_TO_BE_SELECTED=15;
+	public static final String PATH_FOR_SAVING_MODEL=".\\resource\\models\\";
+	public static final String PATH_FOR_LABELED_DATASET=".\\resource\\network_intrusion_detection_with_target.csv";
+	
+	static final Logger logger = LogManager.getLogger(Util.class.getName());
 	
 	public static void main(String[] args) {
 		
@@ -58,9 +64,8 @@ public class BuildModel {
 
 		    
 		    // Load and parse data
-		    String path = ".\\resource\\network_intrusion_detection_with_target.csv";
 		    //JavaRDD<Vector> parsedData =org.sujeet.ml.Util.loadData(jsc, path);
-		    JavaRDD<LabeledPoint> parsedDataFullData =org.sujeet.ml.Util.loadLabeledData(jsc, path);
+		    JavaRDD<LabeledPoint> parsedDataFullData =org.sujeet.ml.Util.loadLabeledData(jsc, PATH_FOR_LABELED_DATASET);
 
 		    parsedDataFullData.cache();
 		    System.out.println("Data row:"+parsedDataFullData.count());
@@ -83,37 +88,32 @@ public class BuildModel {
 		    JavaRDD<LabeledPoint> testFeatureSelectedData = splitsFeatureSelectedData[1];
 		    
 		    
-		    final LogisticRegressionModel fullDataLrModel = new LogisticRegressionWithLBFGS().setNumClasses(2).run(trainingFullData.rdd());
-		    final LogisticRegressionModel selectedDataLrModel = new LogisticRegressionWithLBFGS().setNumClasses(2).run(trainingFullData.rdd());
 		    
-		    BinaryClassificationMetrics fullDataLrMetrics = Util.logisticRegression(fullDataLrModel, trainingFullData, testFullData);
-		    BinaryClassificationMetrics selectedDataLrMetrics = Util.logisticRegression(selectedDataLrModel, trainingFeatureSelectedData, testFeatureSelectedData);
+		    BinaryClassificationMetrics fullDataLrMetrics = Util.logisticRegression(jsc.sc(), "FullDataLR", trainingFullData, testFullData);
+		    BinaryClassificationMetrics selectedDataLrMetrics = Util.logisticRegression(jsc.sc(), "SelDataLR",  trainingFeatureSelectedData, testFeatureSelectedData);
 		    
-		    fullDataLrModel.save(jsc.sc(), ".\\resource\\model\\LogisticRegressionFullData");
-		    selectedDataLrModel.save(jsc.sc(), ".\\resource\\model\\LogisticRegressionSelectedData");
+		    BinaryClassificationMetrics fullDataDtMetrics =Util.DecisionTree(jsc.sc(), "FullDataDT", trainingFullData, testFullData);
+		    BinaryClassificationMetrics selectedDataDtMetrics = Util.DecisionTree(jsc.sc(), "SelDataDT", trainingFeatureSelectedData, testFeatureSelectedData);
 		    
-		    BinaryClassificationMetrics fullDataDtMetrics =Util.DecisionTree(trainingFullData, testFullData);
-		    BinaryClassificationMetrics selectedDataDtMetrics = Util.DecisionTree(trainingFeatureSelectedData, testFeatureSelectedData);
+		    BinaryClassificationMetrics fullDataRfMetrics =Util.RandomForest(jsc.sc(), "FullDataRF", trainingFullData, testFullData);
+		    BinaryClassificationMetrics selectedDataRfMetrics = Util.RandomForest(jsc.sc(), "SelDataRF", trainingFeatureSelectedData, testFeatureSelectedData);
 		    
-		    BinaryClassificationMetrics fullDataRfMetrics =Util.RandomForest(trainingFullData, testFullData);
-		    BinaryClassificationMetrics selectedDataRfMetrics = Util.RandomForest(trainingFeatureSelectedData, testFeatureSelectedData);
-		    
-		    BinaryClassificationMetrics fullDataSvmMetrics =Util.SVMwithSGD(trainingFullData, testFullData);
-		    BinaryClassificationMetrics selectedDataSvmMetrics = Util.SVMwithSGD(trainingFeatureSelectedData, testFeatureSelectedData);
+		    BinaryClassificationMetrics fullDataSvmMetrics =Util.SVMwithSGD(jsc.sc(), "FullDataSVM", trainingFullData, testFullData);
+		    BinaryClassificationMetrics selectedDataSvmMetrics = Util.SVMwithSGD(jsc.sc(), "SelDataSVM", trainingFeatureSelectedData, testFeatureSelectedData);
 		    
 		    
 		    //JavaRDD<LabeledPoint> testData=new 
 		    
-		    System.out.println("Area Under ROC");
-		    System.out.println("====================");
-		    System.out.println("1. Logistic Regression: All Features,"+fullDataLrMetrics.areaUnderROC());
-		    System.out.println("2. Logistic Regression: Selected Features, "+selectedDataLrMetrics.areaUnderROC());
-		    System.out.println("3. Decision Tree: All Features,"+fullDataDtMetrics.areaUnderROC());
-		    System.out.println("4. Decision Tree: Selected Feature, "+selectedDataDtMetrics.areaUnderROC());
-		    System.out.println("5. Random Forest: All Features,"+fullDataRfMetrics.areaUnderROC());
-		    System.out.println("6. Random Forest: Selected Feature ,"+selectedDataRfMetrics.areaUnderROC());
-		    System.out.println("7. SVM: All Features,"+fullDataSvmMetrics.areaUnderROC());
-		    System.out.println("8. SVM: Selected Feature ,"+selectedDataSvmMetrics.areaUnderROC());
+		    logger.info("Area Under ROC");
+		    logger.info("====================");
+		    logger.info("1. Logistic Regression: All Features,"+fullDataLrMetrics.areaUnderROC());
+		    logger.info("2. Logistic Regression: Selected Features, "+selectedDataLrMetrics.areaUnderROC());
+		    logger.info("3. Decision Tree: All Features,"+fullDataDtMetrics.areaUnderROC());
+		    logger.info("4. Decision Tree: Selected Feature, "+selectedDataDtMetrics.areaUnderROC());
+		    logger.info("5. Random Forest: All Features,"+fullDataRfMetrics.areaUnderROC());
+		    logger.info("6. Random Forest: Selected Feature ,"+selectedDataRfMetrics.areaUnderROC());
+		    logger.info("7. SVM: All Features,"+fullDataSvmMetrics.areaUnderROC());
+		    logger.info("8. SVM: Selected Feature ,"+selectedDataSvmMetrics.areaUnderROC());
 		    
 		    jsc.stop();
 		
