@@ -51,7 +51,7 @@ public class BuildModel {
 	public static final String PATH_FOR_SAVING_MODEL=".\\resource\\models\\";
 	public static final String PATH_FOR_LABELED_DATASET=".\\resource\\network_intrusion_detection_with_target.csv";
 	
-	static final Logger logger = LogManager.getLogger(Util.class.getName());
+	static final Logger logger = LogManager.getLogger(BuildModel.class.getName());
 	
 	public static void main(String[] args) {
 		
