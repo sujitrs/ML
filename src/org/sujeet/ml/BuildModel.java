@@ -123,7 +123,6 @@ public class BuildModel {
 		    logger.info("8. SVM: Selected Feature ,");
 		    Util.stats(selectedDataSvmMetrics);
 		    
-		    		    
 		    
 		    jsc.stop();
 		

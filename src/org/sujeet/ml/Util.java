@@ -19,6 +19,7 @@ import org.apache.spark.ml.classification.RandomForestClassificationModel;
 import org.apache.spark.ml.classification.RandomForestClassifier;
 import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator;
 import org.apache.spark.ml.feature.*;
+import org.apache.spark.mllib.linalg.Matrix;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
@@ -232,8 +233,8 @@ public class Util {
 		
 		Integer numClasses = 2;// Two CLass
 	    Map<Integer, Integer> categoricalFeaturesInfo = new HashMap<>();
-	    String impurity = "gini";//"entropy";//"gini";
-	    Integer maxDepth = 5;
+	    String impurity = "entropy";//"entropy";//"gini";
+	    Integer maxDepth = 25;
 	    Integer maxBins = 32;
 
 	    // Train a DecisionTree model for classification.
@@ -265,6 +266,36 @@ public class Util {
 	        }
 	      }).count() / test.count();*/
 	    model.save(sc, BuildModel.PATH_FOR_SAVING_MODEL+modelName);
+	    
+	    /**
+	     * 
+	     */
+	    MulticlassMetrics metrics = new MulticlassMetrics(predictionAndLabels.rdd());
+
+	 // Confusion matrix
+	 Matrix confusion = metrics.confusionMatrix();
+	 logger.info("Confusion matrix: \n" + confusion);
+
+	 // Overall statistics
+	 logger.info("Accuracy = " + metrics.accuracy());
+
+	 // Stats by labels
+	 for (int i = 0; i < metrics.labels().length; i++) {
+	   System.out.format("Class %f precision = %f\n", metrics.labels()[i],metrics.precision(
+	     metrics.labels()[i]));
+	   System.out.format("Class %f recall = %f\n", metrics.labels()[i], metrics.recall(
+	     metrics.labels()[i]));
+	   System.out.format("Class %f F1 score = %f\n", metrics.labels()[i], metrics.fMeasure(
+	     metrics.labels()[i]));
+	 }
+
+	 //Weighted stats
+	 System.out.format("Weighted precision = %f\n", metrics.weightedPrecision());
+	 System.out.format("Weighted recall = %f\n", metrics.weightedRecall());
+	 System.out.format("Weighted F1 score = %f\n", metrics.weightedFMeasure());
+	 System.out.format("Weighted false positive rate = %f\n", metrics.weightedFalsePositiveRate());
+
+	    
 	    return new BinaryClassificationMetrics(predictionAndLabels.rdd());
 	    
 		
@@ -274,10 +305,10 @@ public class Util {
 	{
 		 Integer numClasses = 2;
 		    HashMap<Integer, Integer> categoricalFeaturesInfo = new HashMap<>();
-		    Integer numTrees = 100; // Use more in practice.
+		    Integer numTrees = 10; // Use more in practice.
 		    String featureSubsetStrategy = "sqrt"; // Let the algorithm choose.
-		    String impurity = "entropy";
-		    Integer maxDepth = 5;
+		    String impurity = "gini";
+		    Integer maxDepth = 10;
 		    Integer maxBins = 32;
 		    Integer seed = 12345;
 
@@ -300,8 +331,8 @@ public class Util {
 		          return !pl._1().equals(pl._2());
 		        }
 		      }).count() / testFullData.count();
-		    System.out.println("Test Error: " + testErr);
-		System.out.println("Learned classification forest model:\n" + model.toDebugString());*/
+		    System.out.println("Test Error: " + testErr);*/
+		////logger.info("Learned classification forest model:\n" + model.toDebugString());
 		    
 		    JavaRDD<Tuple2<Object, Object>> predictionAndLabels= test.map(
 				      new Function<LabeledPoint, Tuple2<Object, Object>>() {
@@ -337,6 +368,23 @@ public class Util {
 	    // Get evaluation metrics.
 	    model.save(sc, BuildModel.PATH_FOR_SAVING_MODEL+modelName);
 	    return new BinaryClassificationMetrics(JavaRDD.toRDD(scoreAndLabels));
+	}
+	
+	public static void stats(BinaryClassificationMetrics metrics){
+	    logger.info("Area under ROC= ,"+metrics.areaUnderROC());
+	    logger.info("Area under PR= ,"+metrics.areaUnderPR());
+	    logger.info("Numbins= ,"+metrics.numBins());
+	    //JavaRDD<Tuple2<Object, Object>> roc = metrics.roc().toJavaRDD();
+	    //logger.info("ROC curve: " + roc.collect());
+	    
+	    
+	    
+	    /*JavaRDD<Tuple2<Object, Object>> precision = metrics.precisionByThreshold().toJavaRDD();
+	    logger.info("Precision by threshold: " + precision.collect());
+	    JavaRDD<Tuple2<Object, Object>> recall = metrics.recallByThreshold().toJavaRDD();
+	    logger.info("Recall by threshold: " + recall.collect());*/
+	    
+
 	}
 	
 }
