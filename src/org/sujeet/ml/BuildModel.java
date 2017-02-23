@@ -106,14 +106,24 @@ public class BuildModel {
 		    
 		    logger.info("Area Under ROC");
 		    logger.info("====================");
-		    logger.info("1. Logistic Regression: All Features,"+fullDataLrMetrics.areaUnderROC());
-		    logger.info("2. Logistic Regression: Selected Features, "+selectedDataLrMetrics.areaUnderROC());
-		    logger.info("3. Decision Tree: All Features,"+fullDataDtMetrics.areaUnderROC());
-		    logger.info("4. Decision Tree: Selected Feature, "+selectedDataDtMetrics.areaUnderROC());
-		    logger.info("5. Random Forest: All Features,"+fullDataRfMetrics.areaUnderROC());
-		    logger.info("6. Random Forest: Selected Feature ,"+selectedDataRfMetrics.areaUnderROC());
-		    logger.info("7. SVM: All Features,"+fullDataSvmMetrics.areaUnderROC());
-		    logger.info("8. SVM: Selected Feature ,"+selectedDataSvmMetrics.areaUnderROC());
+		    logger.info("1. Logistic Regression: All Features,");
+		    Util.stats(fullDataLrMetrics);
+		    logger.info("2. Logistic Regression: Selected Features, ");
+		    Util.stats(selectedDataLrMetrics);
+		    logger.info("3. Decision Tree: All Features,");
+		    Util.stats(fullDataDtMetrics);
+		    logger.info("4. Decision Tree: Selected Feature, ");
+		    Util.stats(selectedDataDtMetrics);
+		    logger.info("5. Random Forest: All Features,");
+		    Util.stats(fullDataRfMetrics);
+		    logger.info("6. Random Forest: Selected Feature ,");
+		    Util.stats(selectedDataRfMetrics);
+		    logger.info("7. SVM: All Features,");
+		    Util.stats(fullDataSvmMetrics);
+		    logger.info("8. SVM: Selected Feature ,");
+		    Util.stats(selectedDataSvmMetrics);
+		    
+		    		    
 		    
 		    jsc.stop();
 		
