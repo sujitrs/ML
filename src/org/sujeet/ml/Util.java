@@ -8,6 +8,7 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.mllib.feature.ChiSqSelector;
 import org.apache.spark.mllib.feature.ChiSqSelectorModel;
+import org.apache.spark.mllib.linalg.Matrix;
 import org.apache.spark.mllib.linalg.Vector;
 import org.apache.spark.mllib.linalg.Vectors;
 import org.apache.spark.mllib.regression.LabeledPoint;
@@ -22,6 +23,8 @@ import org.apache.spark.ml.feature.*;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import org.sujeet.util.PostgreSQLJDBC;
+
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -222,7 +225,55 @@ public class Util {
 			      }
 			    );
 			    
-			    model.save(sc, BuildModel.PATH_FOR_SAVING_MODEL+modelName);
+			    
+			    
+			    //// Start coding for storing metrics
+			    {
+			    	MulticlassMetrics metrics = new MulticlassMetrics(predictionAndLabels.rdd());
+			    
+
+				 // TODO Add Confusion matrix in run_details table
+				 Matrix confusion = metrics.confusionMatrix();
+				 logger.info("Confusion matrix: \n" + confusion);
+
+				 PostgreSQLJDBC.saveRunDetails(PostgreSQLJDBC.id,
+						 						0,0,0,0,
+						 						metrics.accuracy(),
+						 						metrics.precision(metrics.labels()[0]),//@ TODO add for both labels
+						 						metrics.recall(metrics.labels()[0]),//@ TODO add for both labels
+						 						metrics.fMeasure(metrics.labels()[0]),//@ TODO add for both labels
+						 						BuildModel.LOGISTIC_REGRESSION,
+						 						BuildModel.PATH_FOR_SAVING_MODEL+modelName+"_"+PostgreSQLJDBC.id
+						 						);
+				 /*
+				  * run_id bigint,
+  tp integer,
+  tn integer,
+  fp integer,
+  fn integer,
+  accuracy real,
+  "precision" real,
+  recall real,
+  f1score real,
+  "algoID" integer
+				  * */
+				 // Overall statistics
+				 logger.debug("Accuracy = " + metrics.accuracy());
+
+				 // Stats by labels
+				 for (int i = 0; i < metrics.labels().length; i++) {
+				   System.out.format("Class %f precision = %f\n", metrics.labels()[i],metrics.precision(
+				     metrics.labels()[i]));
+				   System.out.format("Class %f recall = %f\n", metrics.labels()[i], metrics.recall(
+				     metrics.labels()[i]));
+				   System.out.format("Class %f F1 score = %f\n", metrics.labels()[i], metrics.fMeasure(
+				     metrics.labels()[i]));
+				 }
+			    /// End coding for storing metrics
+			    
+			    }
+			    
+			    model.save(sc, BuildModel.PATH_FOR_SAVING_MODEL+modelName+"_"+PostgreSQLJDBC.id);
 			    BinaryClassificationMetrics  metrics= new BinaryClassificationMetrics(predictionAndLabels.rdd());
 			    
 			    return metrics;
@@ -272,7 +323,7 @@ public class Util {
 	
 	public static BinaryClassificationMetrics RandomForest(SparkContext sc, String modelName,JavaRDD<LabeledPoint> training, JavaRDD<LabeledPoint> test)
 	{
-		 Integer numClasses = 2;
+		 	Integer numClasses = 2;
 		    HashMap<Integer, Integer> categoricalFeaturesInfo = new HashMap<>();
 		    Integer numTrees = 100; // Use more in practice.
 		    String featureSubsetStrategy = "sqrt"; // Let the algorithm choose.

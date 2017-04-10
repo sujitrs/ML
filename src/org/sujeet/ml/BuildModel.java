@@ -31,8 +31,7 @@ import org.apache.spark.mllib.regression.LabeledPoint;
 import org.apache.spark.mllib.tree.DecisionTree;
 import org.apache.spark.mllib.tree.model.DecisionTreeModel;
 import org.apache.spark.mllib.util.MLUtils;
-
-
+import org.sujeet.util.PostgreSQLJDBC;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -50,6 +49,11 @@ public class BuildModel {
 	public static final int NO_OF_FEATURES_TO_BE_SELECTED=15;
 	public static final String PATH_FOR_SAVING_MODEL=".\\resource\\models\\";
 	public static final String PATH_FOR_LABELED_DATASET=".\\resource\\network_intrusion_detection_with_target.csv";
+	public static final int LOGISTIC_REGRESSION=1;
+	public static final int DECISION_TREE=2;
+	public static final int RANDOM_FOREST=3;
+	public static final int SVM_SDG=4;
+	
 	
 	static final Logger logger = LogManager.getLogger(BuildModel.class.getName());
 	
@@ -62,14 +66,15 @@ public class BuildModel {
 		    JavaSparkContext jsc = new JavaSparkContext(conf);
 		    jsc.setLogLevel("ERROR");
 
-		    
+		    //
 		    // Load and parse data
 		    //JavaRDD<Vector> parsedData =org.sujeet.ml.Util.loadData(jsc, path);
 		    JavaRDD<LabeledPoint> parsedDataFullData =org.sujeet.ml.Util.loadLabeledData(jsc, PATH_FOR_LABELED_DATASET);
 
 		    parsedDataFullData.cache();
-		    System.out.println("Data row:"+parsedDataFullData.count());
-		    parsedDataFullData.saveAsTextFile(".\\resource\\parseddata"+new Date().getTime()+".txt");
+		    PostgreSQLJDBC.init();
+		    logger.debug("Data row:"+parsedDataFullData.count());
+		    parsedDataFullData.saveAsTextFile(".\\resource\\parseddata_"+PostgreSQLJDBC.id+".txt");
 		    //@ TODO 4) Select Columns in dataset based on  
 			//@ TODO 5) Feature selection 
 		    JavaRDD<LabeledPoint> parsedDataFeatureSelected=parsedDataFullData;     
