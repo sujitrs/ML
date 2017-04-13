@@ -57,8 +57,7 @@ import org.apache.spark.mllib.regression.LabeledPoint;
 import org.apache.spark.mllib.tree.DecisionTree;
 import org.apache.spark.mllib.tree.model.DecisionTreeModel;
 import org.apache.spark.mllib.util.MLUtils;
-
-
+import org.apache.spark.rdd.RDD;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -211,7 +210,7 @@ public class Util {
 	    });*/	
 	}
 	
-	public static BinaryClassificationMetrics logisticRegression( SparkContext sc, String modelName,JavaRDD<LabeledPoint> training, JavaRDD<LabeledPoint> test){
+	public static boolean logisticRegression( SparkContext sc, String modelName,JavaRDD<LabeledPoint> training, JavaRDD<LabeledPoint> test){
 		
 		final LogisticRegressionModel model = new LogisticRegressionWithLBFGS().setNumClasses(2).run(training.rdd());
 	    
@@ -224,62 +223,16 @@ public class Util {
 			        }
 			      }
 			    );
+			  
 			    
-			    
-			    
-			    //// Start coding for storing metrics
-			    {
-			    	MulticlassMetrics metrics = new MulticlassMetrics(predictionAndLabels.rdd());
-			    
-
-				 // TODO Add Confusion matrix in run_details table
-				 Matrix confusion = metrics.confusionMatrix();
-				 logger.info("Confusion matrix: \n" + confusion);
-
-				 PostgreSQLJDBC.saveRunDetails(PostgreSQLJDBC.id,
-						 						0,0,0,0,
-						 						metrics.accuracy(),
-						 						metrics.precision(metrics.labels()[0]),//@ TODO add for both labels
-						 						metrics.recall(metrics.labels()[0]),//@ TODO add for both labels
-						 						metrics.fMeasure(metrics.labels()[0]),//@ TODO add for both labels
-						 						BuildModel.LOGISTIC_REGRESSION,
-						 						BuildModel.PATH_FOR_SAVING_MODEL+modelName+"_"+PostgreSQLJDBC.id
-						 						);
-				 /*
-				  * run_id bigint,
-  tp integer,
-  tn integer,
-  fp integer,
-  fn integer,
-  accuracy real,
-  "precision" real,
-  recall real,
-  f1score real,
-  "algoID" integer
-				  * */
-				 // Overall statistics
-				 logger.debug("Accuracy = " + metrics.accuracy());
-
-				 // Stats by labels
-				 for (int i = 0; i < metrics.labels().length; i++) {
-				   System.out.format("Class %f precision = %f\n", metrics.labels()[i],metrics.precision(
-				     metrics.labels()[i]));
-				   System.out.format("Class %f recall = %f\n", metrics.labels()[i], metrics.recall(
-				     metrics.labels()[i]));
-				   System.out.format("Class %f F1 score = %f\n", metrics.labels()[i], metrics.fMeasure(
-				     metrics.labels()[i]));
-				 }
-			    /// End coding for storing metrics
-			    
-			    }
+			 
 			    
 			    model.save(sc, BuildModel.PATH_FOR_SAVING_MODEL+modelName+"_"+PostgreSQLJDBC.id);
-			    BinaryClassificationMetrics  metrics= new BinaryClassificationMetrics(predictionAndLabels.rdd());
 			    
-			    return metrics;
+			    return logstats(predictionAndLabels.rdd(),modelName,BuildModel.LOGISTIC_REGRESSION);//
 	}
 	
-	public static BinaryClassificationMetrics DecisionTree(SparkContext sc, String modelName, JavaRDD<LabeledPoint> training, JavaRDD<LabeledPoint> test){
+	public static boolean DecisionTree(SparkContext sc, String modelName, JavaRDD<LabeledPoint> training, JavaRDD<LabeledPoint> test){
 		
 		Integer numClasses = 2;// Two CLass
 	    Map<Integer, Integer> categoricalFeaturesInfo = new HashMap<>();
@@ -315,13 +268,13 @@ public class Util {
 	          return !pl._1().equals(pl._2());
 	        }
 	      }).count() / test.count();*/
-	    model.save(sc, BuildModel.PATH_FOR_SAVING_MODEL+modelName);
-	    return new BinaryClassificationMetrics(predictionAndLabels.rdd());
+	    model.save(sc, BuildModel.PATH_FOR_SAVING_MODEL+modelName+"_"+PostgreSQLJDBC.id);
+	    return logstats(predictionAndLabels.rdd(),modelName,BuildModel.DECISION_TREE);//
 	    
 		
 	}
 	
-	public static BinaryClassificationMetrics RandomForest(SparkContext sc, String modelName,JavaRDD<LabeledPoint> training, JavaRDD<LabeledPoint> test)
+	public static boolean RandomForest(SparkContext sc, String modelName,JavaRDD<LabeledPoint> training, JavaRDD<LabeledPoint> test)
 	{
 		 	Integer numClasses = 2;
 		    HashMap<Integer, Integer> categoricalFeaturesInfo = new HashMap<>();
@@ -362,11 +315,14 @@ public class Util {
 				        }
 				      }
 				    );
-		    model.save(sc, BuildModel.PATH_FOR_SAVING_MODEL+modelName);
-		    return new BinaryClassificationMetrics(predictionAndLabels.rdd());
+		 //   model.save(sc, BuildModel.PATH_FOR_SAVING_MODEL+modelName);
+		    //return new BinaryClassificationMetrics(predictionAndLabels.rdd());
+		    model.save(sc, BuildModel.PATH_FOR_SAVING_MODEL+modelName+"_"+PostgreSQLJDBC.id);
+		    
+		    return logstats(predictionAndLabels.rdd(),modelName,BuildModel.RANDOM_FOREST);//
 	}
 	
-	public static BinaryClassificationMetrics SVMwithSGD(SparkContext sc, String modelName,JavaRDD<LabeledPoint> training, JavaRDD<LabeledPoint> test)
+	public static boolean SVMwithSGD(SparkContext sc, String modelName,JavaRDD<LabeledPoint> training, JavaRDD<LabeledPoint> test)
 	{
 	    // Run training algorithm to build the model.
 	    int numIterations = 100;
@@ -386,8 +342,41 @@ public class Util {
 	    );
 
 	    // Get evaluation metrics.
-	    model.save(sc, BuildModel.PATH_FOR_SAVING_MODEL+modelName);
-	    return new BinaryClassificationMetrics(JavaRDD.toRDD(scoreAndLabels));
+	    model.save(sc, BuildModel.PATH_FOR_SAVING_MODEL+modelName+"_"+PostgreSQLJDBC.id);
+	    
+	    return logstats(JavaRDD.toRDD(scoreAndLabels),modelName,BuildModel.SVM_SDG);//new BinaryClassificationMetrics(JavaRDD.toRDD(scoreAndLabels));
 	}
+	
+	
+	
+	public static boolean logstats(RDD<Tuple2<Object, Object>> predictionAndLabels, String modelName, int algoID){
+		MulticlassMetrics metrics = new MulticlassMetrics(predictionAndLabels);
+		BinaryClassificationMetrics binMetrics = new BinaryClassificationMetrics(predictionAndLabels);
+
+		 // TODO Add Confusion matrix in run_details table
+		 Matrix confusion = metrics.confusionMatrix();
+		 System.out.println("Confusion matrix: \n" + confusion);
+
+		 PostgreSQLJDBC.saveRunDetails(PostgreSQLJDBC.id,
+				 						0,0,0,0,
+				 						metrics.accuracy(),
+				 						metrics.precision(metrics.labels()[0]),
+				 						metrics.recall(metrics.labels()[0]),
+				 						metrics.fMeasure(metrics.labels()[0]),
+				 						algoID,
+				 						BuildModel.PATH_FOR_SAVING_MODEL+modelName+"_"+PostgreSQLJDBC.id,
+				 						metrics.precision(metrics.labels()[1]),
+				 						metrics.recall(metrics.labels()[1]),
+				 						metrics.fMeasure(metrics.labels()[1]),
+				 						binMetrics.areaUnderROC(),
+				 						metrics.truePositiveRate(metrics.labels()[0]),
+				 						metrics.falsePositiveRate(metrics.labels()[0]),
+				 						metrics.truePositiveRate(metrics.labels()[1]),
+				 						metrics.falsePositiveRate(metrics.labels()[1])
+				 						
+				 						);
+
+	    return true;
+	} 
 	
 }

@@ -61,27 +61,16 @@ public class PostgreSQLJDBC {
 	      }
 	      
 	   }
-	  /* 
-	   * @param run_id bigint,
-				tp integer,
-				tn integer,
-				fp integer,
-				fn integer,
-				accuracy real,
-				"precision" real,
-				recall real,
-				f1score real,
-				"algoID" integer
-		  * */
+	
 	public static void saveRunDetails(Integer id2, int tp, int tn, int fp, int fn, double accuracy, double precision,
-			double recall, double fMeasure, int algoID, String model) {
+			double recall, double fMeasure, int algoID, String model, double d, double f, double g, double h, double i, double j, double k, double l) {
 		
 		// TODO Auto-generated method stub
 		Statement stmt = null;
 	      try {
 	    	  c.setAutoCommit(false);
 	         stmt = c.createStatement();
-	         String sql = "INSERT INTO run_details  VALUES ("+id2+", "+tp+", "+tn+", "+fp+", "+fn+", "+accuracy+", "+precision+", "+recall+", "+fMeasure+","+algoID+","+model+");";
+	         String sql = "INSERT INTO run_details  VALUES ("+id2+", "+accuracy+", "+precision+", "+recall+", "+fMeasure+","+algoID+",'"+model+"',"+d+","+f+","+g+","+h+","+i+","+j+","+k+","+l+")";
 	         stmt.executeUpdate(sql);
 	         stmt.close();
 	         c.commit();
