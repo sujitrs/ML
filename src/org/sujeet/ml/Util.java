@@ -288,25 +288,6 @@ public class Util {
 		    final RandomForestModel model = RandomForest.trainClassifier(training, numClasses,
 		      categoricalFeaturesInfo, numTrees, featureSubsetStrategy, impurity, maxDepth, maxBins,
 		      seed);
-
-		    // Evaluate model on test instances and compute test error
-		   /* JavaPairRDD<Double, Double> predictionAndLabel =
-		    		test.mapToPair(new PairFunction<LabeledPoint, Double, Double>() {
-		        @Override
-		        public Tuple2<Double, Double> call(LabeledPoint p) {
-		          return new Tuple2<>(model.predict(p.features()), p.label());
-		        }
-		      });
-		    Double testErr =
-		      1.0 * predictionAndLabel.filter(new Function<Tuple2<Double, Double>, Boolean>() {
-		        @Override
-		        public Boolean call(Tuple2<Double, Double> pl) {
-		          return !pl._1().equals(pl._2());
-		        }
-		      }).count() / testFullData.count();
-		    System.out.println("Test Error: " + testErr);
-		System.out.println("Learned classification forest model:\n" + model.toDebugString());*/
-		    
 		    JavaRDD<Tuple2<Object, Object>> predictionAndLabels= test.map(
 				      new Function<LabeledPoint, Tuple2<Object, Object>>() {
 				        public Tuple2<Object, Object> call(LabeledPoint p) {
@@ -315,11 +296,8 @@ public class Util {
 				        }
 				      }
 				    );
-		 //   model.save(sc, BuildModel.PATH_FOR_SAVING_MODEL+modelName);
-		    //return new BinaryClassificationMetrics(predictionAndLabels.rdd());
 		    model.save(sc, BuildModel.PATH_FOR_SAVING_MODEL+modelName+"_"+PostgreSQLJDBC.id);
-		    
-		    return logstats(predictionAndLabels.rdd(),modelName,BuildModel.RANDOM_FOREST);//
+		    return logstats(predictionAndLabels.rdd(),modelName,BuildModel.RANDOM_FOREST);
 	}
 	
 	public static boolean SVMwithSGD(SparkContext sc, String modelName,JavaRDD<LabeledPoint> training, JavaRDD<LabeledPoint> test)
@@ -373,9 +351,7 @@ public class Util {
 				 						metrics.falsePositiveRate(metrics.labels()[0]),
 				 						metrics.truePositiveRate(metrics.labels()[1]),
 				 						metrics.falsePositiveRate(metrics.labels()[1])
-				 						
 				 						);
-
 	    return true;
 	} 
 	
