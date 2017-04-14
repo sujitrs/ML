@@ -23,11 +23,13 @@ import org.apache.spark.streaming.api.java.JavaPairReceiverInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.kafka.KafkaUtils;
 import org.sujeet.ml.BuildModel;
+import org.sujeet.ml.report.ReportToKafka;
+import org.sujeet.ml.report.ReportingEngine;
 
 /**
  * Consumes messages from one or more topics in Kafka and does wordcount.
  *
- * Usage: JavaKafkaWordCount <zkQuorum> <group> <topics> <numThreads>
+ * Usage: Analysis <zkQuorum> <group> <topics> <numThreads>
  *   <zkQuorum> is a list of one or more zookeeper servers that make quorum
  *   <group> is the name of kafka consumer group
  *   <topics> is a list of one or more kafka topics to consume from
@@ -56,9 +58,9 @@ public final class Analysis implements AnalysisEngine {
     logger.info("Online Anomaly Detection Engine Started");
     logger.info(":::::::::::::::::::::::::::::::::::::::");
 
-    SparkConf sparkConf = new SparkConf().setMaster("local[5]").setAppName("Analysis");
+    SparkConf sparkConf = new SparkConf().setMaster("local[2]").setAppName("Analysis");
     // Create the context with 2 seconds batch size
-    JavaStreamingContext jssc = new JavaStreamingContext(sparkConf, new Duration(2000));
+    JavaStreamingContext jssc = new JavaStreamingContext(sparkConf, new Duration(5000));
 
     int numThreads = Integer.parseInt(args[3]);
     Map<String, Integer> topicMap = new HashMap<>();
@@ -66,9 +68,9 @@ public final class Analysis implements AnalysisEngine {
     for (String topic: topics) {
       topicMap.put(topic, numThreads);
     }
-
-    JavaPairReceiverInputDStream<String, String> messages =
-            KafkaUtils.createStream(jssc, args[0], args[1], topicMap);
+    ReportingEngine report=new ReportToKafka();
+    report.init();
+    JavaPairReceiverInputDStream<String, String> messages = KafkaUtils.createStream(jssc, args[0], args[1], topicMap);
     DtAnalyser.init(jssc.sparkContext());
     DtAnalyser dt=new DtAnalyser();
     JavaDStream<String> lines = messages.map(new Function<Tuple2<String, String>, String>() {
@@ -76,16 +78,18 @@ public final class Analysis implements AnalysisEngine {
       public String call(Tuple2<String, String> tuple2) {
     	  if(dt.processAndPredict(tuple2._2())){
     		  logger.info("Anomaly Found for Stream: "+tuple2._2());
+    		  report.reportAnomaly("Anomaly Found for Stream: "+tuple2._2());
     		  return "Anomaly Found for Stream: "+tuple2._2();
     	  }
     	  logger.info("Normal Stream:: "+tuple2._2());
+    	  report.reportNormal("Normal Stream: "+tuple2._2());
         return "Normal Stream: "+tuple2._2();
       }
     });
     //@ TODO Print in topic-Anomalies else Normal
     
-    //lines.print();
-    //lines.count().print();
+    lines.print();
+    lines.count().print();
     //lines.foreachRDD().;
     //System.out.println("Found smthg to print");
     //lines.print();
