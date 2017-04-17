@@ -1,0 +1,1 @@
+E:\_dev\kafka_2.11-0.10.1.0\bin\windows\kafka-console-producer.bat --broker-list localhost:9092 --topic streams-file-input < E:\_dev\kafka_2.11-0.10.1.0\ids.txt

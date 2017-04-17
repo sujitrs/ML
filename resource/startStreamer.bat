@@ -1,0 +1,1 @@
+bin/windows/connect-standalone.bat config/connect-standalone.properties config/connect-file-source.properties config/connect-file-sink.properties

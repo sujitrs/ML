@@ -1,0 +1,1 @@
+E:\_dev\kafka_2.11-0.10.1.0\bin\windows\kafka-topics.bat --list --zookeeper localhost:2181 >> topics.txt
