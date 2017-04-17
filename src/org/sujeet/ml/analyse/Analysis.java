@@ -25,6 +25,7 @@ import org.apache.spark.streaming.kafka.KafkaUtils;
 import org.sujeet.ml.BuildModel;
 import org.sujeet.ml.report.ReportToKafka;
 import org.sujeet.ml.report.ReportingEngine;
+import org.sujeet.util.PostgreSQLJDBC;
 
 /**
  * Consumes messages from one or more topics in Kafka and does wordcount.
@@ -37,9 +38,13 @@ import org.sujeet.ml.report.ReportingEngine;
  *
  * To run this example:
  * D:\_dev\kafka_2.11-0.10.1.0\bin\windows\kafka-console-producer.bat --broker-list localhost:9092 --topic streams-file-input < ids.txt
+ * 
  *   `$ bin/run-example org.apache.spark.examples.streaming.JavaKafkaWordCount zoo01,zoo02, \
  *    zoo03 my-consumer-group topic1,topic2 1`
  *    localhost:2181 connect-local streams-file-input 1
+ *    
+ *    E:\_dev\kafka_2.11-0.10.1.0\bin\windows\kafka-console-producer.bat --broker-list localhost:9092 --topic streams-file-input < E:\_dev\kafka_2.11-0.10.1.0\ids.txt
+ *    
  */
 
 public final class Analysis implements AnalysisEngine {
@@ -54,6 +59,7 @@ public final class Analysis implements AnalysisEngine {
       System.err.println("Usage: Analysis <zkQuorum> <group> <topics> <numThreads>");
       System.exit(1);
     }
+    
     logger.info(":::::::::::::::::::::::::::::::::::::::");
     logger.info("Online Anomaly Detection Engine Started");
     logger.info(":::::::::::::::::::::::::::::::::::::::");
@@ -70,6 +76,7 @@ public final class Analysis implements AnalysisEngine {
     }
     ReportingEngine report=new ReportToKafka();
     report.init();
+    PostgreSQLJDBC.init();
     JavaPairReceiverInputDStream<String, String> messages = KafkaUtils.createStream(jssc, args[0], args[1], topicMap);
     DtAnalyser.init(jssc.sparkContext());
     DtAnalyser dt=new DtAnalyser();
@@ -78,11 +85,11 @@ public final class Analysis implements AnalysisEngine {
       public String call(Tuple2<String, String> tuple2) {
     	  if(dt.processAndPredict(tuple2._2())){
     		  logger.info("Anomaly Found for Stream: "+tuple2._2());
-    		  report.reportAnomaly("Anomaly Found for Stream: "+tuple2._2());
+    		  report.reportAnomaly(tuple2._2());
     		  return "Anomaly Found for Stream: "+tuple2._2();
     	  }
     	  logger.info("Normal Stream:: "+tuple2._2());
-    	  report.reportNormal("Normal Stream: "+tuple2._2());
+    	  report.reportNormal(tuple2._2());
         return "Normal Stream: "+tuple2._2();
       }
     });

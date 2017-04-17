@@ -14,6 +14,7 @@ import org.apache.spark.mllib.tree.model.DecisionTreeModel;
 import org.apache.spark.mllib.tree.model.RandomForestModel;
 import org.sujeet.ml.BuildModel;
 //import org.apache.spark.mllib.linalg;
+import org.sujeet.util.PostgreSQLJDBC;
 
 
 public class DtAnalyser /*implements Analyse*/ implements Serializable{
@@ -45,9 +46,11 @@ public class DtAnalyser /*implements Analyse*/ implements Serializable{
 		System.out.println("LR::"+LRprediction);
 		//System.out.println("SVM::"+SVMprediction);
 		System.out.println("RF::"+RFprediction);
-		System.out.println(""+(DTprediction+LRprediction+RFprediction));
+		System.out.println(""+(DTprediction+LRprediction+	RFprediction));
+		boolean finalPrediction=(DTprediction+LRprediction+RFprediction)>=2.0?true:false;
+		PostgreSQLJDBC.saveDatasetAndResults(input, RFprediction, DTprediction,LRprediction,(finalPrediction==true?1.0:0.0));
 		
-		return (DTprediction+LRprediction+RFprediction)>=2.0?true:false;
+		return finalPrediction;
 		
 	}
 
@@ -66,6 +69,7 @@ public class DtAnalyser /*implements Analyse*/ implements Serializable{
 		DTmodel	=DecisionTreeModel.load(jsc.sc(),".\\resource\\models\\FullDataDT_13");
 		RFmodel	=RandomForestModel.load(jsc.sc(),".\\resource\\models\\FullDataRF_13");
 		SvmModel=SVMModel.load(jsc.sc(),".\\resource\\models\\FullDataSVM_13");
+		PostgreSQLJDBC.init();
 		return true;
 	}
 

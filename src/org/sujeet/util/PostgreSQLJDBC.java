@@ -4,6 +4,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDateTime;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -47,7 +48,6 @@ public class PostgreSQLJDBC {
 	         rs.close();
 	         stmt.close();
 	         c.commit();
-	       //  c.close();
 	      } catch (Exception e) {
 	         logger.error( e.getClass().getName()+": "+ e.getMessage() );
 	         try {
@@ -64,32 +64,41 @@ public class PostgreSQLJDBC {
 	
 	public static void saveRunDetails(Integer id2, int tp, int tn, int fp, int fn, double accuracy, double precision,
 			double recall, double fMeasure, int algoID, String model, double d, double f, double g, double h, double i, double j, double k, double l) {
+	         String sql = "INSERT INTO run_details  VALUES ("+id2+", "+accuracy+", "+precision+", "+recall+", "+fMeasure+","+algoID+",'"+model+"',"+d+","+f+","+g+","+h+","+i+","+j+","+k+","+l+")";
+	         insert(sql);
+	
+	      }
+
+	public static void saveDatasetAndResults(String dataset,double RFprediction,double DTprediction,double LRprediction,double finalPrediction) {
 		
-		// TODO Auto-generated method stub
+	         String sql = "INSERT INTO predictions  VALUES ("+dataset+","+RFprediction+","+DTprediction+","+LRprediction+","+finalPrediction+")";
+	         System.out.println("Prediction inserted with"+sql );
+	         insert(sql);
+	         System.out.println("Prediction inserted with"+sql );
+	      }
+	
+	
+	
+	public static void insert(String sql) {
 		Statement stmt = null;
 	      try {
 	    	  c.setAutoCommit(false);
 	         stmt = c.createStatement();
-	         String sql = "INSERT INTO run_details  VALUES ("+id2+", "+accuracy+", "+precision+", "+recall+", "+fMeasure+","+algoID+",'"+model+"',"+d+","+f+","+g+","+h+","+i+","+j+","+k+","+l+")";
 	         stmt.executeUpdate(sql);
 	         stmt.close();
 	         c.commit();
-	         logger.debug("run_details updated");
-	       //  c.close();
 	      } catch (Exception e) {
 	         logger.error( e.getClass().getName()+": "+ e.getMessage() );
 	         try {
 				c.rollback();
 			} catch (SQLException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 				System.exit(0);
 			}
 	
 	      }
-
-		
-	}
+	
 	}
 	
 
+}

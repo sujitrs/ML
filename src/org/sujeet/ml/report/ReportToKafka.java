@@ -8,6 +8,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.sujeet.ml.analyse.Analysis;
+import org.sujeet.util.PostgreSQLJDBC;
 public class ReportToKafka implements ReportingEngine,Serializable {
 	
 	
@@ -43,6 +44,7 @@ public class ReportToKafka implements ReportingEngine,Serializable {
 		// TODO Auto-generated method stub
 		logger.debug("Start");
 		try{
+			
 		producer.send(new ProducerRecord<String, String>(ANOMALY_TOPIC, i, i));
 		}catch(Exception ex){
 			logger.error(ex.getMessage());
